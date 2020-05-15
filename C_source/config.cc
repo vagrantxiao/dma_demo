@@ -241,7 +241,6 @@ int dma_inst::WR2TxBuffer()
 	/* Create pattern in the packet to transmit
 	 */
 	TxPacket = (u8 *) Packet;
-	printf("Packet=%x\r\n", TxPacket);
 
 	Value = test_start_value;
 
@@ -250,7 +249,6 @@ int dma_inst::WR2TxBuffer()
 
 		Value = (Value + 1) & 0xFF;
 	}
-	printf ("send packet%d\r\n", i);
 
 	/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
 	 * is enabled
@@ -394,10 +392,8 @@ int dma_inst::CheckData(void)
 {
 	u8 *RxPacket;
 	int i = 0;
-	u8 Value;
 
 	RxPacket = (u8 *) rx_buffer_base;
-	Value = test_start_value;
 
 	/* Invalidate the DestBuffer before receiving the data, in case the
 	 * Data Cache is enabled
@@ -407,14 +403,21 @@ int dma_inst::CheckData(void)
 								NUMBER_OF_PACKETS);
 #endif
 
-	//for(i = 0; i < max_pkt_len * number_of_packets; i++) {
-	for(i = 0; i < 10; i++) {
-		for (int j=15+i*16; j>=i*16; j--){
-			xil_printf("%02x_", (unsigned int)RxPacket[j]);
+	unsigned int value = max_pkt_len * number_of_packets/16;
+	for(i = 0; i < max_pkt_len * number_of_packets/16; i++) {
+	//for(i = 0; i < 10; i++) {
+		unsigned int sum = 0;
+		sum += (unsigned int)RxPacket[i*16+3]*256*256*256;
+		sum += (unsigned int)RxPacket[i*16+2]*256*256;
+		sum += (unsigned int)RxPacket[i*16+1]*256;
+		sum += (unsigned int)RxPacket[i*16];
+		if (sum != value)
+		{
+		  xil_printf("sum=%x ?== %x\n", sum, value);
 		}
-		xil_printf("\n");
-		Value = (Value + 1) & 0xFF;
+		value++;
 	}
+	xil_printf("All data are all right!\r\n");
 
 	return XST_SUCCESS;
 }
@@ -430,7 +433,7 @@ int dma_inst::RecvPackets()
 
 	XTime_GetTime(&Start);
 	Xil_Out32(SLV_REG4, 1);
-	printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
+	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
 	/* Wait until the data has been received by the Rx channel */
 	int total = 0;
 	ProcessedBdCount = 0;
