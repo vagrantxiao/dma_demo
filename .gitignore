@@ -1,4 +1,6 @@
 dma_demo/
 vivado*
 .Xil/
+.metadata/
+
 
