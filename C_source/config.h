@@ -1,18 +1,27 @@
+#include "xaxidma.h"
+#include "xparameters.h"
+#include "xdebug.h"
+#include "xtime_l.h"
+#include "stdio.h"
+#include "sleep.h"
+#ifdef __aarch64__
+#include "xil_mmu.h"
+#endif
+
 //width of a packet is 49 bits
 //bft2arm_packet = {1'b1, SLV_REG1[15:0], SLV_REG0[31:0]}
 //arm2bft_packet = {SLV_REG5[16:0], SLV_REG4[31:0]}
 //input fifo empty = SLV_REG3[1]
 //output fifo full = SLV_REG3[0]
 //input fifo rd_en = SLV_REG7[1]
+#if defined(XPAR_UARTNS550_0_BASEADDR)
+#include "xuartns550_l.h"       /* to use uartns550 */
+#endif
 
-#define SLV_REG0 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+0
-#define SLV_REG1 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+4
-#define SLV_REG2 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+8
-#define SLV_REG3 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+12
-#define SLV_REG4 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+16
-#define SLV_REG5 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+20
-#define SLV_REG6 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+24
-#define SLV_REG7 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+28
+#ifndef DEBUG
+extern void xil_printf(const char *format, ...);
+#endif
+
 
 
 void read_from_fifo(int * ctrl_reg);
@@ -23,5 +32,51 @@ void init_regs();
 
 int stream_op(int op_type, int i);
 
-int send_packet(int i);
+int run_dma(void);
 
+
+class dma_inst{
+
+public:
+	XAxiDma AxiDma;
+	u32 *Packet;
+	XAxiDma_Bd *LastRxBdPtr = NULL;
+	dma_inst(u32 DMA_DEV_ID_in,
+			 u32 RX_BD_SPACE_HIGH_in,
+			 u32 RX_BD_SPACE_BASE_in,
+			 u32 MAX_PKT_LEN_in,
+			 u32 TX_BD_SPACE_HIGH_in,
+			 u32 TX_BD_SPACE_BASE_in,
+			 u32 NUMBER_OF_PACKETS_in,
+			 u32 RX_BUFFER_BASE_in,
+			 u32 TX_BUFFER_BASE_in);
+	u32 dma_dev_id;
+	u32 rx_bd_space_high;
+	u32 rx_bd_space_base;
+	u32 max_pkt_len;
+	u32 tx_bd_space_high;
+	u32 tx_bd_space_base;
+	u32 number_of_packets;
+	u32 test_start_value;
+	u32 rx_buffer_base;
+
+
+	int RxSetup(XAxiDma * AxiDmaInstPtr);
+	int TxSetup(XAxiDma * AxiDmaInstPtr);
+
+	int dma_init();
+	int WR2TxBuffer();
+	int SendPackets();
+	int RecvPackets();
+	int CheckData();
+	int CleanRxBuffer();
+	int run_dma(void);
+
+
+private:
+
+
+
+
+
+};
