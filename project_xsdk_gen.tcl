@@ -1,13 +1,12 @@
 #!/usr/bin/tclsh
-# set project_name "helloworld"
+set vivado_prj "dma_demo"
 set project_name "poll_multi_pkt"
 set example_prj "Empty Application"
-# set language "C"
 set language "C++"
 set hdf_name "floorplan_static_wrapper"
 set core_name "psu_cortexa53_0"
 set vivado_prj "dma_demo" 
-set_workspace ./
+set_workspace ./${vivado_prj}/${vivado_prj}.sdk
 
 
 
@@ -18,7 +17,7 @@ create_project -type bsp -name ${project_name}_bsp -hwproject ${hdf_name}_hw_pla
 create_project -type app -name ${project_name} -hwproject floorplan_static_wrapper_hw_platform_0\
 	-proc ${core_name} -os standalone -lang ${language} -app {Empty Application} -bsp ${project_name}_bsp
 
-file delete -force ./${project_name}/src/main.cc
+file delete -force ./${vivado_prj}/${vivado_prj}.sdk/${project_name}/src/main.cc
 importsources -name ${project_name} -path ./C_source 
 
 build -type bsp -name ${project_name}_bsp
