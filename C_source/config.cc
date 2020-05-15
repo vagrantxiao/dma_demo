@@ -362,19 +362,34 @@ int dma_inst::SendPackets()
 	return XST_SUCCESS;
 }
 
-/*****************************************************************************/
-/**
-*
-* This function checks data buffer after the DMA transfer is finished.
-*
-* @param	None
-*
-* @return	- XST_SUCCESS if validation is successful
-*		- XST_FAILURE if validation is failure.
-*
-* @note		None.
-*
-******************************************************************************/
+int dma_inst::CleanTxBuffer()
+{
+	XAxiDma_BdRing *TxRingPtr;
+	u32 ProcessedBdCount = 0;
+	XAxiDma_Bd *BdPtr;
+	int Status;
+
+	TxRingPtr = XAxiDma_GetTxRing(&AxiDma);
+
+	/* Wait until the TX transactions are done */
+	while (ProcessedBdCount < number_of_packets) {
+		ProcessedBdCount += XAxiDma_BdRingFromHw(TxRingPtr,
+					       XAXIDMA_ALL_BDS, &BdPtr);
+	}
+
+	/* Free all processed TX BDs for future transmission */
+	Status = XAxiDma_BdRingFree(TxRingPtr, ProcessedBdCount, BdPtr);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	print("DMA send success!\n");
+
+	return Status;
+
+}
+
+
 int dma_inst::CheckData(void)
 {
 	u8 *RxPacket;
@@ -412,29 +427,10 @@ int dma_inst::CheckData(void)
 
 int dma_inst::RecvPackets()
 {
-	XAxiDma_BdRing *TxRingPtr;
 	XAxiDma_BdRing *RxRingPtr;
-	XAxiDma_Bd *BdPtr;
 	u32 ProcessedBdCount = 0;
-	u32 FreeBdCount;
-	int Status;
 
-	TxRingPtr = XAxiDma_GetTxRing(&AxiDma);
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
-
-	/* Wait until the TX transactions are done */
-	while (ProcessedBdCount < number_of_packets) {
-		ProcessedBdCount += XAxiDma_BdRingFromHw(TxRingPtr,
-					       XAXIDMA_ALL_BDS, &BdPtr);
-	}
-
-	/* Free all processed TX BDs for future transmission */
-	Status = XAxiDma_BdRingFree(TxRingPtr, ProcessedBdCount, BdPtr);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	print("DMA send success!\n");
 
 	XTime_GetTime(&Start);
 	Xil_Out32(SLV_REG4, 1);
@@ -445,7 +441,7 @@ int dma_inst::RecvPackets()
 	while (ProcessedBdCount < number_of_packets/4) {
 
 		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
-					       XAXIDMA_ALL_BDS, &BdPtr);
+					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
 		if (total < 100)
 		  printf("ProcessedBdCount=%d\r\n", (unsigned int) ProcessedBdCount);
 		total++;
@@ -455,16 +451,14 @@ int dma_inst::RecvPackets()
 	XTime time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
 	printf("DMA Recv Time: %.2lfus\n", time);
 	printf("DMA Recv Throughput: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
-	return Status;
+	return XST_SUCCESS;
 }
 
 
 
 int dma_inst::CleanRxBuffer()
 {
-	XAxiDma_BdRing *TxRingPtr;
 	XAxiDma_BdRing *RxRingPtr;
-	XAxiDma_Bd *BdPtr;
 	u32 ProcessedBdCount = 0;
 	u32 FreeBdCount;
 	int Status;
@@ -472,7 +466,7 @@ int dma_inst::CleanRxBuffer()
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
 	/* Free all processed RX BDs for future transmission */
-	Status = XAxiDma_BdRingFree(RxRingPtr, ProcessedBdCount, BdPtr);
+	Status = XAxiDma_BdRingFree(RxRingPtr, ProcessedBdCount, BdPtrGlobal);
 	if (Status != XST_SUCCESS) {
 		xil_printf("free bd failed\r\n");
 		return XST_FAILURE;
@@ -484,13 +478,13 @@ int dma_inst::CleanRxBuffer()
 	 *    - Pass the BDs to RX channel
 	 */
 	FreeBdCount = XAxiDma_BdRingGetFreeCnt(RxRingPtr);
-	Status = XAxiDma_BdRingAlloc(RxRingPtr, FreeBdCount, &BdPtr);
+	Status = XAxiDma_BdRingAlloc(RxRingPtr, FreeBdCount, &BdPtrGlobal);
 	if (Status != XST_SUCCESS) {
 		xil_printf("bd alloc failed\r\n");
 		return XST_FAILURE;
 	}
 
-	Status = XAxiDma_BdRingToHw(RxRingPtr, FreeBdCount, BdPtr);
+	Status = XAxiDma_BdRingToHw(RxRingPtr, FreeBdCount, BdPtrGlobal);
 
 	return Status;
 }

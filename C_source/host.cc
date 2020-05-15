@@ -41,6 +41,12 @@ int main(void)
 		return XST_FAILURE;
 	}
 
+	Status = dma1.CleanTxBuffer();
+	if (Status != XST_SUCCESS) {
+		xil_printf("Cleaning TxBuffer Failed!\r\n");
+		return XST_FAILURE;
+	}
+
 	Status = dma1.RecvPackets();
 	if (Status != XST_SUCCESS) {
 		xil_printf("Receiving Packets Failed!\r\n");
