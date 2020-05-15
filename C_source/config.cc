@@ -407,16 +407,12 @@ int dma_inst::CheckData(void)
 								NUMBER_OF_PACKETS);
 #endif
 
-	for(i = 0; i < max_pkt_len * number_of_packets; i++) {
-		if (RxPacket[i] != Value) {
-				xil_printf("Data error: ");
-				for (int j=0; j<16; j++){
-					xil_printf("%02x", (unsigned int)RxPacket[i+j]);
-				}
-				xil_printf("/%x\r\n", (unsigned int)Value);
-
-			return XST_FAILURE;
+	//for(i = 0; i < max_pkt_len * number_of_packets; i++) {
+	for(i = 0; i < 10; i++) {
+		for (int j=15+i*16; j>=i*16; j--){
+			xil_printf("%02x_", (unsigned int)RxPacket[j]);
 		}
+		xil_printf("\n");
 		Value = (Value + 1) & 0xFF;
 	}
 
@@ -438,13 +434,10 @@ int dma_inst::RecvPackets()
 	/* Wait until the data has been received by the Rx channel */
 	int total = 0;
 	ProcessedBdCount = 0;
-	while (ProcessedBdCount < number_of_packets/4) {
+	while (ProcessedBdCount < number_of_packets) {
 
 		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
 					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
-		if (total < 100)
-		  printf("ProcessedBdCount=%d\r\n", (unsigned int) ProcessedBdCount);
-		total++;
 	}
 
 	XTime_GetTime(&End);
