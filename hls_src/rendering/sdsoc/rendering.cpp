@@ -1330,3 +1330,24 @@ void data_send(
 	}
 
 }
+
+void pseudo_rendering(
+		  hls::stream<ap_uint<DATA_WIDTH> > & Input_1,
+		  hls::stream<ap_uint<DATA_WIDTH> > & Output_1
+		  )
+{
+#pragma HLS INTERFACE ap_hs port=Input_1
+#pragma HLS INTERFACE ap_hs port=Output_1
+
+	bit128 tmp;
+	int i;
+	for (i=0; i<MAX_PKT_LEN*NUMBER_OF_PACKETS*8/DATA_WIDTH; i++)
+	{
+#pragma HLS PIPELINE II=1
+		tmp = Input_1.read();
+		 Output_1.write(tmp);
+	}
+
+}
+
+

@@ -1,18 +1,30 @@
 /*
  * Program:
+
  *   This program is a C++ driver for using one DMA in ZCU102 board.
  *
  * History:
  *   2020/5/14     Yuanlong Xiao   First Release
 */
-
 #include "config.h"
 #include "typedefs.h"
+
+#define SLV_REG0 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+0
+#define SLV_REG1 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+4
+#define SLV_REG2 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+8
+#define SLV_REG3 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+12
+#define SLV_REG4 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+16
+#define SLV_REG5 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+20
+#define SLV_REG6 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+24
+#define SLV_REG7 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+28
 
 
 int main(void)
 {
 	int Status;
+
+	Xil_Out32(SLV_REG4, 1);
+
 	dma_inst dma1(DMA_DEV_ID,
 			 RX_BD_SPACE_HIGH,
 			 RX_BD_SPACE_BASE,
@@ -22,6 +34,7 @@ int main(void)
 			 NUMBER_OF_PACKETS,
 			 RX_BUFFER_BASE,
 			 TX_BUFFER_BASE);
+
 
 	Status = dma1.dma_init();
 	if (Status != XST_SUCCESS) {

@@ -13,7 +13,7 @@
 
 #define DATA_WIDTH         128
 #define MAX_PKT_LEN		   0x3000
-#define NUMBER_OF_PACKETS  0x400
+#define NUMBER_OF_PACKETS  0x3
 
 
 
@@ -42,6 +42,7 @@ const int NUM_3D_TRI = 3192;
   typedef ap_uint<8> bit8;
   typedef ap_uint<16> bit16;
   typedef ap_uint<32> bit32;
+  typedef ap_uint<128> bit128;
 #else
   typedef unsigned char bit8;
   typedef unsigned int bit32;

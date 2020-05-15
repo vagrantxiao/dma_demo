@@ -1,0 +1,15 @@
+#
+# An unexpected error has occurred (6)
+#
+Stack:
+/lib/x86_64-linux-gnu/libc.so.6(+0x3ef20) [0x7fb6963e3f20]
+/lib/x86_64-linux-gnu/libc.so.6(gsignal+0xc7) [0x7fb6963e3e97]
+/lib/x86_64-linux-gnu/libc.so.6(abort+0x141) [0x7fb6963e5801]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/Ubuntu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x15d) [0x7fb696a3c33d]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/Ubuntu/libstdc++.so.6(+0x8e316) [0x7fb696a3a316]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/Ubuntu/libstdc++.so.6(+0x8e361) [0x7fb696a3a361]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/Ubuntu/libstdc++.so.6(+0x8e578) [0x7fb696a3a578]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/Ubuntu/libstdc++.so.6(+0x8d302) [0x7fb696a39302]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/librdi_common.so(HI18N::Convert::Out(char const*, char const*, std::__cxx11::basic_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t> >&, std::codecvt<wchar_t, char, __mbstate_t> const&)+0x238) [0x7fb6974052d8]
+/home/ylxiao/Xilinx/Vivado/2018.3/lib/lnx64.o/librdi_labtools.so(Java_ui_data_labtools_lthwdatai_HWSysMonSensor_1getMinRegister+0x38) [0x7fb658c18d58]
+[0x7fb639e48db5]

@@ -43,7 +43,8 @@
 
 
 #define MAX_PKT_LEN		0x3000
-#define NUMBER_OF_PACKETS 	0x400
+//#define NUMBER_OF_PACKETS 	0x400
+#define NUMBER_OF_PACKETS 	0x3
 #define TEST_START_VALUE	0xC
 
 /**************************** Type Definitions *******************************/
@@ -56,3 +57,6 @@
 #if defined(XPAR_UARTNS550_0_BASEADDR)
 static void Uart550_Setup(void);
 #endif
+
+
+

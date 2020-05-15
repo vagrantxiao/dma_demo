@@ -1,18 +1,14 @@
+
+#include <complex>
+#include "ap_int.h"
+#include "xtime_l.h"
+typedef ap_uint<32> bit32;
+typedef ap_uint<8> bit8;
+#include "input_data.h"
 #include "config.h"
 
 
 
-
-
-
-#define SLV_REG0 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+0
-#define SLV_REG1 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+4
-#define SLV_REG2 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+8
-#define SLV_REG3 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+12
-#define SLV_REG4 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+16
-#define SLV_REG5 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+20
-#define SLV_REG6 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+24
-#define SLV_REG7 XPAR_AXILITE2BFT_V2_0_0_BASEADDR+28
 
 
 
@@ -242,12 +238,23 @@ int dma_inst::WR2TxBuffer()
 	 */
 	TxPacket = (u8 *) Packet;
 
-	Value = test_start_value;
+	for(i=0; i<16; i++)
+	{
+		TxPacket[i] = 0x00;
+	}
 
-	for(i = 0; i < max_pkt_len * number_of_packets; i ++) {
-		TxPacket[i] = Value;
+	TxPacket[1] = 0x90;
 
-		Value = (Value + 1) & 0xFF;
+	for(i = 0; i < num_3d_triangles; i ++) {
+		TxPacket[i*9+16] = triangle_3ds[i].x0;
+		TxPacket[i*9+17] = triangle_3ds[i].y0;
+		TxPacket[i*9+18] = triangle_3ds[i].z0;
+		TxPacket[i*9+19] = triangle_3ds[i].x1;
+		TxPacket[i*9+20] = triangle_3ds[i].y1;
+		TxPacket[i*9+21] = triangle_3ds[i].z1;
+		TxPacket[i*9+22] = triangle_3ds[i].x2;
+		TxPacket[i*9+23] = triangle_3ds[i].y2;
+		TxPacket[i*9+24] = triangle_3ds[i].z2;
 	}
 
 	/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
@@ -346,16 +353,16 @@ int dma_inst::SendPackets()
 	}
 
 	int wait_num = 0;
-    while(Xil_In32(SLV_REG0) == 0)
-    {
-    	wait_num++;
-    }
+    //while(Xil_In32(SLV_REG0) == 0)
+    //{
+    //	wait_num++;
+    //}
     XTime_GetTime(&End);
 	XTime time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
 	printf("DMA Config Time: %.2lfus\n", time);
 	printf("DMA Config Time: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
     printf("wait_num = %d\n", wait_num);
-	printf("Recv value: %d\n", Xil_In32(SLV_REG0));
+	//printf("Recv value: %d\n", Xil_In32(SLV_REG0));
 
 	return XST_SUCCESS;
 }
@@ -432,7 +439,7 @@ int dma_inst::RecvPackets()
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
 	XTime_GetTime(&Start);
-	Xil_Out32(SLV_REG4, 1);
+	//Xil_Out32(SLV_REG4, 1);
 	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
 	/* Wait until the data has been received by the Rx channel */
 	int total = 0;
@@ -441,6 +448,9 @@ int dma_inst::RecvPackets()
 
 		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
 					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
+		if(total<10)
+			printf("ProcessedBdCount=%x\n", ProcessedBdCount);
+		total++;
 	}
 
 	XTime_GetTime(&End);
@@ -551,8 +561,6 @@ int dma_inst::dma_init()
 	int Status;
 	XAxiDma_Config *Config;
 
-	printf("tx_bd_space_base=%x\r\n", tx_bd_space_base);
-	printf("rx_bd_space_base=%x\r\n", rx_bd_space_base);
 #if defined(XPAR_UARTNS550_0_BASEADDR)
 
 	Uart550_Setup();
