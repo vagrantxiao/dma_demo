@@ -24,7 +24,6 @@ int main(void)
 	int Status;
 
 	Xil_Out32(SLV_REG4, 1);
-
 	dma_inst dma1(DMA_DEV_ID,
 			 RX_BD_SPACE_HIGH,
 			 RX_BD_SPACE_BASE,
@@ -35,11 +34,16 @@ int main(void)
 			 RX_BUFFER_BASE,
 			 TX_BUFFER_BASE);
 
-
 	Status = dma1.dma_init();
 	if (Status != XST_SUCCESS) {
 		xil_printf("Device Initiation Failed!\r\n");
 		return XST_FAILURE;
+	}
+
+	Status = dma1.RecvPackets();
+		if (Status != XST_SUCCESS) {
+			xil_printf("Receiving Packets Failed!\r\n");
+			return XST_FAILURE;
 	}
 
 	Status = dma1.WR2TxBuffer();
@@ -60,9 +64,9 @@ int main(void)
 		return XST_FAILURE;
 	}
 
-	Status = dma1.RecvPackets();
+	Status = dma1.RecvWait();
 	if (Status != XST_SUCCESS) {
-		xil_printf("Receiving Packets Failed!\r\n");
+		xil_printf("Receiving Waits Failed!\r\n");
 		return XST_FAILURE;
 	}
 

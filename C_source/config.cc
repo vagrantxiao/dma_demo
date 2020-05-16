@@ -243,7 +243,7 @@ int dma_inst::WR2TxBuffer()
 		TxPacket[i] = 0x00;
 	}
 
-	TxPacket[1] = 0x90;
+	TxPacket[1] = 0x09;
 
 	for(i = 0; i < num_3d_triangles; i ++) {
 		TxPacket[i*9+16] = triangle_3ds[i].x0;
@@ -358,7 +358,7 @@ int dma_inst::SendPackets()
     //	wait_num++;
     //}
     XTime_GetTime(&End);
-	XTime time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
+	double time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
 	printf("DMA Config Time: %.2lfus\n", time);
 	printf("DMA Config Time: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
     printf("wait_num = %d\n", wait_num);
@@ -394,12 +394,52 @@ int dma_inst::CleanTxBuffer()
 
 }
 
+int dma_inst::RecvPackets()
+{
+	XAxiDma_BdRing *RxRingPtr;
+
+	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
+	ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
+					   XAXIDMA_ALL_BDS, &BdPtrGlobal);
+	xil_printf("Recv begin!\r\n");
+}
+
+
+int dma_inst::RecvWait()
+{
+	XAxiDma_BdRing *RxRingPtr;
+
+
+	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
+
+	XTime_GetTime(&Start);
+	//Xil_Out32(SLV_REG4, 1);
+	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
+	/* Wait until the data has been received by the Rx channel */
+	int total = 0;
+	while (ProcessedBdCount < number_of_packets) {
+
+		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
+					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
+		//if(total<10)
+		//	printf("ProcessedBdCount=%x\n", ProcessedBdCount);
+		//total++;
+	}
+
+	XTime_GetTime(&End);
+	double time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
+	printf("DMA Recv Time: %.2lfus\n", time);
+	printf("DMA Recv Throughput: %.2lfMB/s\n", ((double)(max_pkt_len*number_of_packets))/time);
+	return XST_SUCCESS;
+}
+
+
 
 int dma_inst::CheckData(void)
 {
 	u8 *RxPacket;
 	int i = 0;
-
+	int j = 0;
 	RxPacket = (u8 *) rx_buffer_base;
 
 	/* Invalidate the DestBuffer before receiving the data, in case the
@@ -410,55 +450,32 @@ int dma_inst::CheckData(void)
 								NUMBER_OF_PACKETS);
 #endif
 
-	unsigned int value = max_pkt_len * number_of_packets/16;
-	for(i = 0; i < max_pkt_len * number_of_packets/16; i++) {
-	//for(i = 0; i < 10; i++) {
-		unsigned int sum = 0;
-		sum += (unsigned int)RxPacket[i*16+3]*256*256*256;
-		sum += (unsigned int)RxPacket[i*16+2]*256*256;
-		sum += (unsigned int)RxPacket[i*16+1]*256;
-		sum += (unsigned int)RxPacket[i*16];
-		if (sum != value)
-		{
-		  xil_printf("sum=%x ?== %x\n", sum, value);
+	for(i = 0; i < num_3d_triangles ; i++) {
+		if (RxPacket[i*9+16] != triangle_3ds[i].x0){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+16], triangle_3ds[i].x0);
+		}else if(RxPacket[i*9+17] != triangle_3ds[i].y0){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+17], triangle_3ds[i].y0);
+		}else if(RxPacket[i*9+18] != triangle_3ds[i].z0){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+18], triangle_3ds[i].z0);
+		}else if(RxPacket[i*9+19] != triangle_3ds[i].x1){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+19], triangle_3ds[i].x1);
+		}else if(RxPacket[i*9+20] != triangle_3ds[i].y1){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+20], triangle_3ds[i].y1);
+		}else if(RxPacket[i*9+21] != triangle_3ds[i].z1){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+21], triangle_3ds[i].z1);
+		}else if(RxPacket[i*9+22] != triangle_3ds[i].x2){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+22], triangle_3ds[i].x2);
+		}else if(RxPacket[i*9+23] != triangle_3ds[i].y2){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+23], triangle_3ds[i].x2);
+		}else if(RxPacket[i*9+24] != triangle_3ds[i].z2){
+			xil_printf("Error %d != %d\r\n", RxPacket[i*9+24], triangle_3ds[i].z2);
 		}
-		value++;
 	}
 	xil_printf("All data are all right!\r\n");
 
 	return XST_SUCCESS;
 }
 
-
-
-int dma_inst::RecvPackets()
-{
-	XAxiDma_BdRing *RxRingPtr;
-	u32 ProcessedBdCount = 0;
-
-	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
-
-	XTime_GetTime(&Start);
-	//Xil_Out32(SLV_REG4, 1);
-	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
-	/* Wait until the data has been received by the Rx channel */
-	int total = 0;
-	ProcessedBdCount = 0;
-	while (ProcessedBdCount < number_of_packets) {
-
-		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
-					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
-		if(total<10)
-			printf("ProcessedBdCount=%x\n", ProcessedBdCount);
-		total++;
-	}
-
-	XTime_GetTime(&End);
-	XTime time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
-	printf("DMA Recv Time: %.2lfus\n", time);
-	printf("DMA Recv Throughput: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
-	return XST_SUCCESS;
-}
 
 
 
@@ -542,6 +559,7 @@ dma_inst::dma_inst(u32 DMA_DEV_ID_in,
 	this->rx_buffer_base = RX_BUFFER_BASE_in;
 	this->Packet = (u32 *) TX_BUFFER_BASE_in;
 	this->test_start_value = 0xC;
+	this->ProcessedBdCount = 0;
 	/*
 	printf("this->dma_dev_id=%x\r\n",this->dma_dev_id);
 	printf("this->rx_bd_space_high=%x\r\n",this->rx_bd_space_high);

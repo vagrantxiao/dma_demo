@@ -60,6 +60,7 @@ public:
 	u32 test_start_value;
 	u32 rx_buffer_base;
 	XAxiDma_Bd *BdPtrGlobal;
+	u32 ProcessedBdCount;
 
 	int RxSetup(XAxiDma * AxiDmaInstPtr);
 	int TxSetup(XAxiDma * AxiDmaInstPtr);
@@ -69,6 +70,7 @@ public:
 	int SendPackets();
 	int CleanTxBuffer();
 	int RecvPackets();
+	int RecvWait();
 	int CheckData();
 	int CleanRxBuffer();
 	int run_dma(void);
