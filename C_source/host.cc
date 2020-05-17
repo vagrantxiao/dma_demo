@@ -78,6 +78,12 @@ int main(void)
 		return XST_FAILURE;
 	}
 
+	Status = dma1.print_results();
+	if (Status != XST_SUCCESS) {
+		xil_printf("Printing results Failed!\r\n");
+		return XST_FAILURE;
+	}
+
 	Status = dma1.CleanRxBuffer();
 	if (Status != XST_SUCCESS) {
 		xil_printf("Cleaning RxBuffer Failed!\r\n");

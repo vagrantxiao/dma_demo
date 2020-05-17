@@ -332,7 +332,7 @@ int dma_inst::SendPackets()
 		CurBdPtr = (XAxiDma_Bd *)XAxiDma_BdRingNext(TxRingPtr, CurBdPtr);
 	}
 
-	XTime_GetTime(&Start);
+	XTime_GetTime(&StartTotal);
 	/* Give the BD to DMA to kick off the transmission. */
 	Status = XAxiDma_BdRingToHw(TxRingPtr, number_of_packets, BdPtr);
 	if (Status != XST_SUCCESS) {
@@ -341,12 +341,6 @@ int dma_inst::SendPackets()
 		return XST_FAILURE;
 	}
 
-	int wait_num = 0;
-    XTime_GetTime(&End);
-	double time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
-	printf("DMA Config Time: %.2lfus\n", time);
-	printf("DMA Config Time: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
-    printf("wait_num = %d\n", wait_num);
 
 	return XST_SUCCESS;
 }
@@ -366,13 +360,17 @@ int dma_inst::CleanTxBuffer()
 					       XAXIDMA_ALL_BDS, &BdPtr);
 	}
 
+	//XTime_GetTime(&End);
+	//Send_time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
+
+
 	/* Free all processed TX BDs for future transmission */
 	Status = XAxiDma_BdRingFree(TxRingPtr, ProcessedBdCount, BdPtr);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 
-	print("DMA send success!\n");
+	//print("DMA send success!\n");
 
 	return Status;
 
@@ -396,7 +394,7 @@ int dma_inst::RecvWait()
 
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
-	XTime_GetTime(&Start);
+	//XTime_GetTime(&Start);
 	//Xil_Out32(SLV_REG4, 1);
 	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
 	/* Wait until the data has been received by the Rx channel */
@@ -410,10 +408,10 @@ int dma_inst::RecvWait()
 		//total++;
 	}
 
-	XTime_GetTime(&End);
-	double time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
-	printf("DMA Recv Time: %.2lfus\n", time);
-	printf("DMA Recv Throughput: %.2lfMB/s\n", ((double)(max_pkt_len*number_of_packets))/time);
+	XTime_GetTime(&EndTotal);
+	//EndTotal = End;
+	//Recv_time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
+	//Total_time = (double)(EndTotal - StartTotal);
 	return XST_SUCCESS;
 }
 
@@ -619,4 +617,16 @@ int dma_inst::dma_init()
 	}
 
 	return Status;
+}
+
+
+int dma_inst::print_results()
+{
+	//printf("DMA Send Time: %.2lfus\n", Send_time);
+	//printf("DMA Send Throughput: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/Send_time);
+	//printf("DMA Recv Time: %.2lfus\n", Recv_time);
+	//printf("DMA Recv Throughput: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/Recv_time);
+	Total_time = ((double)(EndTotal - StartTotal) / (COUNTS_PER_SECOND / 1000000));
+	printf("Overall Time: %.2lfus\n", Total_time);
+	return XST_SUCCESS;
 }

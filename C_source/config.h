@@ -39,6 +39,10 @@ class dma_inst{
 
 public:
 	XTime Start, End;
+	XTime StartTotal, EndTotal;
+	double Send_time;
+	double Recv_time;
+	double Total_time;
 	XAxiDma AxiDma;
 	u32 *Packet;
 	XAxiDma_Bd *LastRxBdPtr = NULL;
@@ -79,6 +83,7 @@ public:
 	int CheckData();
 	int CleanRxBuffer();
 	int run_dma(void);
+	int print_results();
 
 
 private:
