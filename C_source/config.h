@@ -38,6 +38,7 @@ int run_dma(void);
 class dma_inst{
 
 public:
+	XTime Start, End;
 	XAxiDma AxiDma;
 	u32 *Packet;
 	XAxiDma_Bd *LastRxBdPtr = NULL;
@@ -45,18 +46,22 @@ public:
 			 u32 RX_BD_SPACE_HIGH_in,
 			 u32 RX_BD_SPACE_BASE_in,
 			 u32 MAX_PKT_LEN_in,
+			 u32 MAX_PKT_LEN_RX_in,
 			 u32 TX_BD_SPACE_HIGH_in,
 			 u32 TX_BD_SPACE_BASE_in,
 			 u32 NUMBER_OF_PACKETS_in,
+			 u32 NUMBER_OF_PACKETS_RX_in,
 			 u32 RX_BUFFER_BASE_in,
 			 u32 TX_BUFFER_BASE_in);
 	u32 dma_dev_id;
 	u32 rx_bd_space_high;
 	u32 rx_bd_space_base;
 	u32 max_pkt_len;
+	u32 max_pkt_len_rx;
 	u32 tx_bd_space_high;
 	u32 tx_bd_space_base;
 	u32 number_of_packets;
+	u32 number_of_packets_rx;
 	u32 test_start_value;
 	u32 rx_buffer_base;
 	XAxiDma_Bd *BdPtrGlobal;

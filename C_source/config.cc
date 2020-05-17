@@ -11,10 +11,6 @@ typedef ap_uint<8> bit8;
 
 
 
-
-XTime Start, End;
-
-
 #if defined(XPAR_UARTNS550_0_BASEADDR)
 /*****************************************************************************/
 /*
@@ -123,11 +119,11 @@ int dma_inst::RxSetup(XAxiDma * AxiDmaInstPtr)
 			return XST_FAILURE;
 		}
 
-		Status = XAxiDma_BdSetLength(BdCurPtr, max_pkt_len,
+		Status = XAxiDma_BdSetLength(BdCurPtr, max_pkt_len_rx,
 				RxRingPtr->MaxTransferLen);
 		if (Status != XST_SUCCESS) {
 			xil_printf("Rx set length %d on BD %x failed %d\r\n",
-					max_pkt_len, (UINTPTR)BdCurPtr, Status);
+					max_pkt_len_rx, (UINTPTR)BdCurPtr, Status);
 
 			return XST_FAILURE;
 		}
@@ -137,7 +133,7 @@ int dma_inst::RxSetup(XAxiDma * AxiDmaInstPtr)
 		 */
 		XAxiDma_BdSetCtrl(BdPtr, 0);
 		XAxiDma_BdSetId(BdCurPtr, RxBufferPtr);
-		RxBufferPtr += max_pkt_len;
+		RxBufferPtr += max_pkt_len_rx;
 
 		if (i == (FreeBdCount - 1)) {
 			LastRxBdPtr = BdCurPtr;
@@ -238,23 +234,16 @@ int dma_inst::WR2TxBuffer()
 	 */
 	TxPacket = (u8 *) Packet;
 
-	for(i=0; i<16; i++)
-	{
-		TxPacket[i] = 0x00;
-	}
-
-	TxPacket[1] = 0x09;
-
 	for(i = 0; i < num_3d_triangles; i ++) {
-		TxPacket[i*9+16] = triangle_3ds[i].x0;
-		TxPacket[i*9+17] = triangle_3ds[i].y0;
-		TxPacket[i*9+18] = triangle_3ds[i].z0;
-		TxPacket[i*9+19] = triangle_3ds[i].x1;
-		TxPacket[i*9+20] = triangle_3ds[i].y1;
-		TxPacket[i*9+21] = triangle_3ds[i].z1;
-		TxPacket[i*9+22] = triangle_3ds[i].x2;
-		TxPacket[i*9+23] = triangle_3ds[i].y2;
-		TxPacket[i*9+24] = triangle_3ds[i].z2;
+		TxPacket[i*16+0] = triangle_3ds[i].x0;
+		TxPacket[i*16+1] = triangle_3ds[i].y0;
+		TxPacket[i*16+2] = triangle_3ds[i].z0;
+		TxPacket[i*16+3] = triangle_3ds[i].x1;
+		TxPacket[i*16+4] = triangle_3ds[i].y1;
+		TxPacket[i*16+5] = triangle_3ds[i].z1;
+		TxPacket[i*16+6] = triangle_3ds[i].x2;
+		TxPacket[i*16+7] = triangle_3ds[i].y2;
+		TxPacket[i*16+8] = triangle_3ds[i].z2;
 	}
 
 	/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
@@ -353,16 +342,11 @@ int dma_inst::SendPackets()
 	}
 
 	int wait_num = 0;
-    //while(Xil_In32(SLV_REG0) == 0)
-    //{
-    //	wait_num++;
-    //}
     XTime_GetTime(&End);
 	double time = ((double)(End - Start) / (COUNTS_PER_SECOND / 1000000));
 	printf("DMA Config Time: %.2lfus\n", time);
 	printf("DMA Config Time: %.2lfMB/s\n", (float)max_pkt_len*number_of_packets/time);
     printf("wait_num = %d\n", wait_num);
-	//printf("Recv value: %d\n", Xil_In32(SLV_REG0));
 
 	return XST_SUCCESS;
 }
@@ -417,7 +401,7 @@ int dma_inst::RecvWait()
 	//printf("SLV_REG4: %x\n", Xil_In32(SLV_REG4));
 	/* Wait until the data has been received by the Rx channel */
 	int total = 0;
-	while (ProcessedBdCount < number_of_packets) {
+	while (ProcessedBdCount < number_of_packets_rx) {
 
 		ProcessedBdCount += XAxiDma_BdRingFromHw(RxRingPtr,
 					       XAXIDMA_ALL_BDS, &BdPtrGlobal);
@@ -437,11 +421,11 @@ int dma_inst::RecvWait()
 
 int dma_inst::CheckData(void)
 {
-	u8 *RxPacket;
+	u32 *RxPacket;
 	int i = 0;
 	int j = 0;
-	RxPacket = (u8 *) rx_buffer_base;
-
+	RxPacket = (u32 *) rx_buffer_base;
+	RxPacket += 4;
 	/* Invalidate the DestBuffer before receiving the data, in case the
 	 * Data Cache is enabled
 	 */
@@ -450,28 +434,39 @@ int dma_inst::CheckData(void)
 								NUMBER_OF_PACKETS);
 #endif
 
-	for(i = 0; i < num_3d_triangles ; i++) {
-		if (RxPacket[i*9+16] != triangle_3ds[i].x0){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+16], triangle_3ds[i].x0);
-		}else if(RxPacket[i*9+17] != triangle_3ds[i].y0){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+17], triangle_3ds[i].y0);
-		}else if(RxPacket[i*9+18] != triangle_3ds[i].z0){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+18], triangle_3ds[i].z0);
-		}else if(RxPacket[i*9+19] != triangle_3ds[i].x1){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+19], triangle_3ds[i].x1);
-		}else if(RxPacket[i*9+20] != triangle_3ds[i].y1){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+20], triangle_3ds[i].y1);
-		}else if(RxPacket[i*9+21] != triangle_3ds[i].z1){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+21], triangle_3ds[i].z1);
-		}else if(RxPacket[i*9+22] != triangle_3ds[i].x2){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+22], triangle_3ds[i].x2);
-		}else if(RxPacket[i*9+23] != triangle_3ds[i].y2){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+23], triangle_3ds[i].x2);
-		}else if(RxPacket[i*9+24] != triangle_3ds[i].z2){
-			xil_printf("Error %d != %d\r\n", RxPacket[i*9+24], triangle_3ds[i].z2);
-		}
+
+	bit8 frame_buffer_print[256][256];
+
+	// read result from the 32-bit output buffer
+	for (int i = 0, j = 0, n = 0; n < 16384; n ++ )
+	{
+	  bit32 temp = RxPacket[n];
+
+	  frame_buffer_print[i][j++] = temp(7,0);
+	  frame_buffer_print[i][j++] = temp(15,8);
+	  frame_buffer_print[i][j++] = temp(23,16);
+	  frame_buffer_print[i][j++] = temp(31,24);
+	  if(j == 256)
+	  {
+		i++;
+		j = 0;
+	  }
 	}
-	xil_printf("All data are all right!\r\n");
+	// print result
+	printf("Image After Rendering: \n");
+	for (int j = 256 - 1; j >= 0; j -- )
+	{
+	  for (int i = 0; i < 256; i ++ )
+	  {
+	    int pix;
+	    pix = frame_buffer_print[i][j].to_int();
+        if (pix)
+          printf("1");
+        else
+          printf("0");
+      }
+      printf("\n");
+    }
 
 	return XST_SUCCESS;
 }
@@ -543,9 +538,11 @@ dma_inst::dma_inst(u32 DMA_DEV_ID_in,
 		 u32 RX_BD_SPACE_HIGH_in,
 		 u32 RX_BD_SPACE_BASE_in,
 		 u32 MAX_PKT_LEN_in,
+		 u32 MAX_PKT_LEN_RX_in,
 		 u32 TX_BD_SPACE_HIGH_in,
 		 u32 TX_BD_SPACE_BASE_in,
 		 u32 NUMBER_OF_PACKETS_in,
+		 u32 NUMBER_OF_PACKETS_RX_in,
 		 u32 RX_BUFFER_BASE_in,
 		 u32 TX_BUFFER_BASE_in)
 {
@@ -553,9 +550,11 @@ dma_inst::dma_inst(u32 DMA_DEV_ID_in,
 	this->rx_bd_space_high = RX_BD_SPACE_HIGH_in;
 	this->rx_bd_space_base = RX_BD_SPACE_BASE_in;
 	this->max_pkt_len = MAX_PKT_LEN_in;
+	this->max_pkt_len_rx = MAX_PKT_LEN_RX_in;
 	this->tx_bd_space_high = TX_BD_SPACE_HIGH_in;
 	this->tx_bd_space_base = TX_BD_SPACE_BASE_in;
 	this->number_of_packets = NUMBER_OF_PACKETS_in;
+	this->number_of_packets_rx = NUMBER_OF_PACKETS_RX_in;
 	this->rx_buffer_base = RX_BUFFER_BASE_in;
 	this->Packet = (u32 *) TX_BUFFER_BASE_in;
 	this->test_start_value = 0xC;

@@ -42,9 +42,15 @@
 #define RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x1EFFFFFF)
 
 
-#define MAX_PKT_LEN		0x3000
+#define MAX_PKT_LEN		0x31E0
 //#define NUMBER_OF_PACKETS 	0x400
-#define NUMBER_OF_PACKETS 	0x3
+#define NUMBER_OF_PACKETS 	0x4
+
+#define MAX_PKT_LEN_RX		0x1000
+//#define NUMBER_OF_PACKETS 	0x400
+#define NUMBER_OF_PACKETS_RX 	0x11
+
+
 #define TEST_START_VALUE	0xC
 
 /**************************** Type Definitions *******************************/
